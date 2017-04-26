@@ -6,8 +6,10 @@ This module increments a number (under a unique key) in an RDF datastore, and re
 //sparqlQuery:: (query, nodeBack) -> void
 //sparqlUpdate:: (update, nodeBack) -> void
 
-const applyChangeset = require('changeset-sparql')(sparqlQuery, sparqlUpdate)
+const applyChangeset = require('changeset-sparql')(sparqlQuery, sparqlUpdate) //func that does updates via changesets
 const incNum = require('changeset-number-incrementer')
+
+// curry in functions that will run a sparql query (to fetch the number) and apply the updates (to increment the number)
 const getNum = incNum(sparqlQuery, applyChangeset)
 
 const key = 'abc123hjk789' //could be a sha1 of some values that make your key
