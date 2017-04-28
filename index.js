@@ -11,22 +11,33 @@ function (reject, resolve){
         fail: d => resolve(Either.Left(d))
     }))
     const query = taskify(queryNode)
-    const makeZeroCounter = _ => applyChangeset(createCounter(id)).map(_=>0) 
+    const makeZeroCounter = _ => applyChangeset(createCounter(id)).map(changesetUri=>[0, changesetUri]) 
     const incNum = queryCounter(query, id)
     .chain(either(makeZeroCounter, Task.of))
-    .chain(count => 
-        applyChangeset(incrementCount(id, count))
-        .chain(either(_=>incNum, Task.of))
-        .map(_=>count+1)
+    .chain(
+        (tuple) => {
+            const [count, lastChangeSet] = tuple
+            return applyChangeset(incrementCount(id, count, lastChangeSet))
+            .chain(either(_=>incNum, Task.of))
+            .map(_=>count+1)
+        }
     )
 
     incNum.fork(reject, resolve)
 }
 
 function queryCounter(query, id){
-    return query(`SELECT ?count WHERE {
+    return query(`SELECT ?count ?lastChangeSet WHERE {
         <${id}> <app://vocab/count> ?count .
-    }`).map(data => data.bindings.length? Either.Right(parseInt(data.bindings[0].count.value)) : Either.Left(id))
+        <${id}> <app://vocab/changeset-extension/schema#latestChangeSet> ?lastChangeSet .
+        .
+
+    }`)
+        .map(data => data.bindings.length? data.bindings[0] : null )
+        .map(row => row? 
+            Either.Right([parseInt(row.count.value), row.lastChangeSet.value]) 
+            : Either.Left(id)
+        )
 }
 
 
@@ -41,8 +52,9 @@ function countTriple(id, num){
     return {s: id, p: countPredicate, o_value: 0, o_type: 'literal', o_datatype: xsdInt }
 }
 
-const incrementCount = (id, count) => ({
+const incrementCount = (id, count, lastChangeSet) => ({
     reasonForChange: "Increment Counter",
+    previous: [lastChangeSet],
     date: new Date().toISOString(),
     remove: [countTriple(id, count)],
     add: [countTriple(id, count+1)]
