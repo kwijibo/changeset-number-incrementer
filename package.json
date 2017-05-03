@@ -2,5 +2,29 @@
   "dependencies": {
     "data.either": "^1.5.0",
     "data.task": "^3.1.1"
-  }
+  },
+  "name": "changeset-number-incrementer",
+  "description": "This module increments a number (under a unique key) in an RDF datastore, and returns the number to you.",
+  "version": "1.0.1",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "node tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kwijibo/changeset-number-incrementer.git"
+  },
+  "keywords": [
+    "sparql",
+    "changeset",
+    "rdf",
+    "auto-increment"
+  ],
+  "author": "Keith Alexander",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/kwijibo/changeset-number-incrementer/issues"
+  },
+  "homepage": "https://github.com/kwijibo/changeset-number-incrementer#readme"
 }
