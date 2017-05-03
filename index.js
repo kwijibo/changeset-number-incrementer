@@ -30,8 +30,6 @@ function queryCounter(query, id){
     return query(`SELECT ?count ?lastChangeSet WHERE {
         <${id}> <app://vocab/count> ?count .
         <${id}> <app://vocab/changeset-extension/schema#latestChangeSet> ?lastChangeSet .
-        .
-
     }`)
         .map(data => data.bindings.length? data.bindings[0] : null )
         .map(row => row? 
