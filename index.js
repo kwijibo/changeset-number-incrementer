@@ -2,18 +2,24 @@ const Either = require('data.either')
 const Task = require('data.task')
 const xsdInt = 'http://www.w3.org/2001/XMLSchema#integer'
 const countPredicate = 'app://vocab/count'
+const graphName = 'app://graphs/counters'
 
 module.exports = (queryNode, changesetSparql) => id => 
 function (reject, resolve){
     const applyChangeset = cs => new Task((reject, resolve) => changesetSparql(cs, {
         error: reject,
-        success: d => resolve(Either.Right(d)),
-        fail: d => resolve(Either.Left(d))
+        ok: d => resolve(Either.Right(d)),
+        rejected: d => resolve(Either.Left(d))
     }))
     const query = taskify(queryNode)
-    const makeZeroCounter = _ => applyChangeset(createCounter(id)).map(changesetUri=>[0, changesetUri]) 
+    const makeZeroCounter = _ => applyChangeset(createCounter(id))
+        .map(
+            either => 
+                either.map(changesetUri=>[0, changesetUri])
+        ) 
     const incNum = queryCounter(query, id)
-    .chain(either(makeZeroCounter, Task.of))
+    .chain(either(makeZeroCounter, x => Task.of(Either.Right(x))))
+    .chain(either(err => Task.rejected("Strange problem creating counter " + err), Task.of))
     .chain(
         (tuple) => {
             const [count, lastChangeSet] = tuple
@@ -27,17 +33,22 @@ function (reject, resolve){
 }
 
 function queryCounter(query, id){
-    return query(`SELECT ?count ?lastChangeSet WHERE {
-        <${id}> <app://vocab/count> ?count .
-        <${id}> <app://vocab/changeset-extension/schema#latestChangeSet> ?lastChangeSet .
+    return query(`PREFIX : <app://vocab/>
+        PREFIX csex: <app://vocab/changeset-extension/schema#>        
+        SELECT ?count ?lastChangeSet WHERE {
+       GRAPH <${graphName}> {  
+           <${id}> :count ?count .
+       }
+       GRAPH <app://graphs/changesets> {
+           <${id}> csex:latestChangeSet ?lastChangeSet .
+       }
     }`)
-        .map(data => data.bindings.length? data.bindings[0] : null )
+        .map(data => data.results && data.results.bindings.length? data.results.bindings[0] : null )
         .map(row => row? 
             Either.Right([parseInt(row.count.value), row.lastChangeSet.value]) 
-            : Either.Left(id)
+            : Either.Left(id+ ` not found`)
         )
 }
-
 
 const createCounter = id => ({
         reasonForChange: "Create Counter",
@@ -45,9 +56,8 @@ const createCounter = id => ({
         add: [countTriple(id, 0)]
 })
     
-
 function countTriple(id, num){
-    return {s: id, p: countPredicate, o_value: 0, o_type: 'literal', o_datatype: xsdInt }
+    return {s: id, p: countPredicate, o_value: num, o_type: 'literal', o_datatype: xsdInt, g: graphName }
 }
 
 const incrementCount = (id, count, lastChangeSet) => ({
@@ -55,7 +65,7 @@ const incrementCount = (id, count, lastChangeSet) => ({
     previous: [lastChangeSet],
     date: new Date().toISOString(),
     remove: [countTriple(id, count)],
-    add: [countTriple(id, count+1)]
+    add: [countTriple(id, 1+count)]
 })
 
 function taskify(nodeF){

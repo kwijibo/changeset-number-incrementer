@@ -5,7 +5,7 @@
   },
   "name": "changeset-number-incrementer",
   "description": "This module increments a number (under a unique key) in an RDF datastore, and returns the number to you.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
