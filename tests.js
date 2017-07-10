@@ -11,11 +11,11 @@ const changesetSucceed = (changeset, callbacks) => callbacks.ok("Update succeede
 
 const id = "123"
 
-getNumber(queryExistingNonZeroCount, changesetSucceed)(id)(
+getNumber(queryExistingNonZeroCount, changesetSucceed)(id, 0)(
     err => console.error("Error incrementing count for "+id, err),
     num => console.log("count for "+id+" incremented:", num)
 )
-getNumber(queryExistingZeroCount, changesetSucceed)(id)(
+getNumber(queryExistingZeroCount, changesetSucceed)(id, 0)(
     err => console.error("Error incrementing count for "+id, err),
     num => console.log("count for "+id+" incremented:", num)
 )
@@ -33,15 +33,15 @@ const changesetInc = (cs, cbs) => {
     }
     cbs.ok("Update succeeded")
 }
-getNumber(queryCount, changesetInc)(id)(
+getNumber(queryCount, changesetInc)(id, 0)(
     console.error,
     x => console.log('incremented', x)
 )
-getNumber(queryCount, changesetInc)(id)(
+getNumber(queryCount, changesetInc)(id, 0)(
     console.error,
     x => console.log('incremented', x)
 )
-getNumber(queryCount, changesetInc)(id)(
+getNumber(queryCount, changesetInc)(id, 0)(
     console.error,
     x => console.log('incremented', x)
 )
@@ -59,7 +59,7 @@ changesetReject = (cs, cbs) => {
    }, 200)
 }
 
-getNumber(queryCount, changesetReject)(id)(
+getNumber(queryCount, changesetReject)(id, 0)(
     err => console.error("getNumber failed", err),
     n => console.log("number", n)
 )

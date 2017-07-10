@@ -4,7 +4,7 @@ const xsdInt = 'http://www.w3.org/2001/XMLSchema#integer'
 const countPredicate = 'app://vocab/count'
 const graphName = 'app://graphs/counters'
 
-module.exports = (queryNode, changesetSparql) => id => 
+module.exports = (queryNode, changesetSparql) => (id, startNumber) => 
 function (reject, resolve){
     const applyChangeset = cs => new Task((reject, resolve) => changesetSparql(cs, {
         error: reject,
@@ -12,13 +12,13 @@ function (reject, resolve){
         rejected: d => resolve(Either.Left(d))
     }))
     const query = taskify(queryNode)
-    const makeZeroCounter = _ => applyChangeset(createCounter(id))
+    const makeStartCounter = _ => applyChangeset(createCounter(id, startNumber))
         .map(
             either => 
-                either.map(changesetUri=>[0, changesetUri])
+                either.map(changesetUri=>[startNumber, changesetUri])
         ) 
     const incNum = queryCounter(query, id)
-    .chain(either(makeZeroCounter, x => Task.of(Either.Right(x))))
+    .chain(either(makeStartCounter, x => Task.of(Either.Right(x))))
     .chain(either(err => Task.rejected("Strange problem creating counter " + err), Task.of))
     .chain(
         (tuple) => {
@@ -50,10 +50,10 @@ function queryCounter(query, id){
         )
 }
 
-const createCounter = id => ({
+const createCounter = (id, startNumber) => ({
         reasonForChange: "Create Counter",
         date: new Date().toISOString(),
-        add: [countTriple(id, 0)]
+        add: [countTriple(id, startNumber)]
 })
     
 function countTriple(id, num){

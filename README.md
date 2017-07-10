@@ -13,8 +13,9 @@ const incNum = require('changeset-number-incrementer')
 const getNum = incNum(sparqlQuery, applyChangeset)
 
 const key = 'abc123hjk789' //could be a sha1 of some values that make your key
+const startNumber = 0 //the number to start incrementing from; if there is no number for the key already, will return startNumber + 1
 
-getNum(key)(
+getNum(key, startNumber)(
     err => console.error("error getting number", err),
     num => console.log("got a number", num)
 )
